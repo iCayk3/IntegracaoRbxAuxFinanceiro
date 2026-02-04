@@ -2,6 +2,7 @@ package br.com.w4solution.helprbx.services.rbx;
 
 import br.com.w4solution.helprbx.dto.rbx.Atendimentos;
 import br.com.w4solution.helprbx.dto.rbx.DocAberto;
+import br.com.w4solution.helprbx.dto.rbx.FaturamentoDto;
 import br.com.w4solution.helprbx.dto.rbx.ValorBaixado;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,10 +21,9 @@ public class ServiceRbx {
     private String chaveApi;
 
 
-    public String taxaInadiplente(LocalDate data) {
+    public FaturamentoDto taxaInadiplente(LocalDate data) {
 
         LocalDate dataFiltro = (data != null) ? data : LocalDate.now();
-        var value = 0.0;
 
         String consultaInadiplentes = """
                     {
@@ -31,11 +31,11 @@ public class ServiceRbx {
                               "Autenticacao": {
                                  "ChaveIntegracao": "EN6PYLEGXSV7LK3LL2YQ6R1E5U2LG2"
                               },
-                        		 "Filtro": "Data >= '2026-01-01' AND Data <= '2026-01-31' AND Tipo = 'C'"
+                        		 "Filtro": "Data >= '2026-%d-01' AND Data <= '2026-%d-31' AND Tipo = 'C'"
                 
                            }
                     }
-                """;
+                """.formatted(dataFiltro.getMonth().getValue(), dataFiltro.getMonth().getValue());
 
         String consultaDocBaixados = """
                 {
@@ -43,10 +43,10 @@ public class ServiceRbx {
                       "Autenticacao": {
                          "ChaveIntegracao": "EN6PYLEGXSV7LK3LL2YQ6R1E5U2LG2"
                       },
-                      "Filtro": "Movimento.Data >= '2026-01-01' AND Movimento.Data <= '2026-01-31' AND Movimento.Tipo = 'C' AND Historicos.Descricao = 'Documento a receber'"
+                      "Filtro": "Movimento.Data >= '2026-%d-01' AND Movimento.Data <= '2026-%d-31' AND Movimento.Tipo = 'C' AND Historicos.Descricao = 'Documento a receber'"
                    }
                 }
-                """;
+                """.formatted(dataFiltro.getMonth().getValue(), dataFiltro.getMonth().getValue());
 
         try {
 
@@ -80,20 +80,19 @@ public class ServiceRbx {
                 percentualBaixado = (valorTotalDocBaixados / (valorTotalDocBaixados + valorTotalDocAbertos)) * 100;
             }
 
-            System.out.printf("""
-                    Faturamento mês de janeiro: %.2f
-                    Valores recebido: %.2f
-                    Valor em atraso: %.2f
-                    Porcentagem recebida: %.2f%%
-                    %n""", valorTotalDocAbertos + valorTotalDocBaixados, valorTotalDocBaixados, valorTotalDocAbertos, percentualBaixado);
+//            System.out.printf("""
+//                    Faturamento mês de janeiro: %.2f
+//                    Valores recebido: %.2f
+//                    Valor em atraso: %.2f
+//                    Porcentagem recebida: %.2f%%
+//                    %n""", valorTotalDocAbertos + valorTotalDocBaixados, valorTotalDocBaixados, valorTotalDocAbertos, percentualBaixado);
+
+            return new FaturamentoDto((valorTotalDocAbertos + valorTotalDocBaixados), valorTotalDocBaixados, valorTotalDocAbertos, percentualBaixado);
 
         } catch (Exception e) {
             throw new RuntimeException("Erro ao processar integração com RBX: " + e.getMessage(), e);
         }
 
-        return """
-                
-                """;
     }
 
     public String indiceRecuperacao(LocalDate data) {
@@ -104,7 +103,7 @@ public class ServiceRbx {
                            "Autenticacao": {
                                "ChaveIntegracao": "EN6PYLEGXSV7LK3LL2YQ6R1E5U2LG2"
                            },
-                           "Filtro": "AtendT.Nome = 'Negociação' AND AtendC.Nome = 'Reativação'"
+                           "Filtro": "AtendT.Nome = 'Negociação' AND AtendC.Nome = 'Reativação'  AND Atendimentos.Data_BX >= '2026-01-01' AND Atendimentos.Data_BX <= '2026-01-31'"
                        }
                     }
                 """;
@@ -114,7 +113,7 @@ public class ServiceRbx {
                            "Autenticacao": {
                                "ChaveIntegracao": "EN6PYLEGXSV7LK3LL2YQ6R1E5U2LG2"
                            },
-                           "Filtro": "AtendT.Nome = 'Negociação' AND AtendC.Nome != 'Reativação'"
+                           "Filtro": "AtendT.Nome = 'Negociação' AND AtendC.Nome != 'Reativação' AND AtendC.Nome != 'Reativação.' AND Atendimentos.Data_BX >= '2026-01-01' AND Atendimentos.Data_BX <= '2026-01-31'"
                        }
                     }
                 """;
@@ -134,10 +133,6 @@ public class ServiceRbx {
 
             System.out.println(atendimentosRecuperados.size());
             System.out.println(atendimentosNRecuperados.size());
-
-            if(atendimentosRecuperados.equals(atendimentosNRecuperados)){
-                System.out.println("e o mesmo");
-            }
 
         } catch (Exception e) {
             throw new RuntimeException("Erro ao processar integração com RBX: " + e.getMessage(), e);
