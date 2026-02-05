@@ -80,13 +80,6 @@ public class ServiceRbx {
                 percentualBaixado = (valorTotalDocBaixados / (valorTotalDocBaixados + valorTotalDocAbertos)) * 100;
             }
 
-//            System.out.printf("""
-//                    Faturamento mês de janeiro: %.2f
-//                    Valores recebido: %.2f
-//                    Valor em atraso: %.2f
-//                    Porcentagem recebida: %.2f%%
-//                    %n""", valorTotalDocAbertos + valorTotalDocBaixados, valorTotalDocBaixados, valorTotalDocAbertos, percentualBaixado);
-
             return new FaturamentoDto((valorTotalDocAbertos + valorTotalDocBaixados), valorTotalDocBaixados, valorTotalDocAbertos, percentualBaixado);
 
         } catch (Exception e) {
